@@ -1,4 +1,4 @@
-i#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h>
 #ifdef ESP32
 #include <WiFi.h>
 #else
