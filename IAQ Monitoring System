@@ -1,0 +1,380 @@
+i#include <LiquidCrystal_I2C.h>
+#ifdef ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>   // Universal Telegram Bot Library written by Brian Lough: https://github.com/witnessmenow/Universal-Arduino-Telegram-Bot
+#include <ArduinoJson.h>
+#define RXp2 16
+#define TXp2 17
+#include <stdio.h>
+// Replace with your network credentials
+const char* ssid = "Jh";
+const char* password = "12345678901";
+LiquidCrystal_I2C lcd(0x27, 20, 3);
+
+// Initialize Telegram BOT
+#define BOTtoken "5743716783:AAGwb4CKz6x7KcwefcOeXt0g0tpt2iWzrMA"  // your Bot Token (Get from Botfather)
+
+// Use @myidbot to find out the chat ID of an individual or a group
+// Also note that you need to click "start" on a bot before it can
+// message you
+#define CHAT_ID "1210539905"
+
+#ifdef ESP8266
+X509List cert(TELEGRAM_CERTIFICATE_ROOT);
+#endif
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOTtoken, client);
+
+// Checks for new messages every 1 second.
+int botRequestDelay = 1000;
+unsigned long lastTimeBotRan;
+String value1,value2,value3,value4,value5,value6;
+char ch;
+int aqi,co,debug,i=5;
+const int inputpin = 33;
+const int buzzer = 32;
+float temp,hum;
+// Handle what happens when you receive new messages
+void handleNewMessages(int numNewMessages) {
+  Serial.println("handleNewMessages");
+  Serial.println(String(numNewMessages));
+
+  for (int i=0; i<numNewMessages; i++) {
+    // Chat id of the requester
+    String chat_id = String(bot.messages[i].chat_id);
+    if (chat_id != CHAT_ID){
+      bot.sendMessage(chat_id, "Unauthorized user", "");
+      continue;
+    }
+    
+    // Print the received message
+    String text = bot.messages[i].text;
+    Serial.println(text);
+
+    String from_name = bot.messages[i].from_name;
+
+    if (text == "/start") {
+      String welcome = "Welcome, " + from_name + ".\n";
+      welcome += "Use the following commands!.\n\n";
+      welcome += "/aq for AirQuality \n";
+      welcome += "/co for Carbon Monoxide Concentration \n";
+      welcome += "/temp for Temperature \n";
+      welcome += "/hum for Humidity \n";
+      bot.sendMessage(chat_id, welcome, "");
+    }
+    if (text == "/aq") {
+      bot.sendMessage(chat_id, value1, "");
+    }
+    if (text == "/co") {
+      bot.sendMessage(chat_id, value2, "");
+    }   
+    if (text == "/temp") {
+      bot.sendMessage(chat_id, value3, "");    
+      }
+    if (text == "/hum") {
+      bot.sendMessage(chat_id, value4, "");
+      }
+    if (debug==1){
+    if (text == "/aqdebug1") {
+      aqi=100;
+      value1="100Units";
+      bot.sendMessage(chat_id,"Air Quality has been set to 100Units!" , "");
+      }
+    if (text == "/aqdebug2") {
+      aqi=200;
+      value1="200Units";
+      bot.sendMessage(chat_id,"Air Quality has been set to 200Units!" , "");
+      } 
+    if (text == "/aqdebug3") {
+      aqi=300;
+      value1="300Units";
+      bot.sendMessage(chat_id,"Air Quality has been set to 300Units!" , "");
+      }
+    if (text == "/aqdebug4") {
+      aqi=400;
+      value1="400Units";
+      bot.sendMessage(chat_id,"Air Quality has been set to 400Units!" , "");
+      }
+    if (text == "/aqdebugreset") {
+      aqi=0;
+      value1="0Units";
+      bot.sendMessage(chat_id,"Air Quality has been reset to 0Units!" , "");
+      }
+    if (text == "/codebug1") {
+      co=100;
+      value2="100Units";
+      bot.sendMessage(chat_id,"Carbon Monoxide has been set to 100Units!" , "");
+      }
+    if (text == "/codebug2") {
+      co=200;
+      value2="200Units";
+      bot.sendMessage(chat_id,"Carbon Monoxide has been set to 200Units!" , "");
+      }
+    if (text == "/codebug3") {
+      co=300;
+      value2="300Units";
+      bot.sendMessage(chat_id,"Carbon Monoxide has been set to 300Units!" , "");
+      }
+    if (text == "/codebugreset") {
+      co=0;
+      value2="0Units";
+      bot.sendMessage(chat_id,"Carbon Monoxide has been reset to 0Units!" , "");
+      }
+    if (text == "/tempdebug1") {
+      temp=30;
+      value3="30C";
+      bot.sendMessage(chat_id,"Temperature has been set to 30C!" , "");
+      }
+    if (text == "/tempdebug2") {
+      temp=35;
+      value3="35C";
+      bot.sendMessage(chat_id,"Temperature has been set to 35C!" , "");
+      }
+    if (text == "/tempdebug3") {
+      temp=40;
+      value3="40C";
+      bot.sendMessage(chat_id,"Temperature has been set to 40C!" , "");
+      }
+    if (text == "/tempdebug4") {
+      temp=45;
+      value3="55C";
+      bot.sendMessage(chat_id,"Temperature has been set to 45C!" , "");
+      }
+    if (text == "/tempdebugreset") {
+      temp=0;
+      value3="0.00C";
+      bot.sendMessage(chat_id,"Temperature has been reset to 0C!" , "");
+      }
+    if (text == "/humdebug1") {
+      hum=25;
+      value4="25.00%";
+      bot.sendMessage(chat_id,"Humidity has been set to 25%!" , "");
+      }
+    if (text == "/humdebug2") {
+      hum=50;
+      value4="50.00%";
+      bot.sendMessage(chat_id,"Humidity has been set to 50%!" , "");
+    }
+    if (text == "/humdebug3") {
+      hum=75;
+      value4="75.00%";
+      bot.sendMessage(chat_id,"Humidity has been set to 75%!" , "");
+    }
+    if (text == "/humdebug4") {
+      hum=100;
+      value4="100.00%";
+      bot.sendMessage(chat_id,"Humidity has been set to 100%!" , "");
+    }
+    if (text == "/humdebugreset") {
+      hum=0;
+      value4="0.00%";
+      bot.sendMessage(chat_id,"Humidity has been reset to 0%!" , "");
+    }
+    if (text == "/resetall") {
+      aqi=0;
+      co=0;
+      temp=0;
+      hum=0;
+      value1="0Units";
+      value2="0Units";
+      value3="0.00C";
+      value4="0.00%";
+      bot.sendMessage(chat_id,"All values reset to 0" , "");
+    }
+    }
+    if (text == "/debug") {
+      if (debug==0)
+      {
+      bot.sendMessage(chat_id,"Beware! Do not continue if you are not an expert! You have been warned! Use /debugon to enable DEBUG mode. Use /debugoff to disable DEBUG mode." , "");
+        }
+      if (debug==1)
+      {
+       bot.sendMessage(chat_id,"List of commands:\n/aqdebug1,/aqdebug2,/aqdebug3,/aqdebug4,/aqdebugreset\n/codebug1,/codebug2,/codebug3,/codebugreset\n/tempdebug1,/tempdebug2,/tempdebug3,/tempdebug4,/tempdebugreset\n/humdebug1,/humdebug2,/humdebug3,/humdebug4,/humdebugreset\n/resetall\n" , ""); 
+        }
+    }
+    if (text == "/lcdoff") {
+      lcd.noBacklight();
+      bot.sendMessage(chat_id,"Backlight OFF" , "");
+    }
+    if (text == "/lcdon") {
+      lcd.backlight();
+      bot.sendMessage(chat_id,"Backlight ON" , "");
+    }
+    if (text == "/debugon") {
+      debug = 1;
+      bot.sendMessage(chat_id,"DEBUG Mode Turned ON!" , "");
+  }
+    if (text == "/debugoff") {
+      debug = 0;
+      bot.sendMessage(chat_id,"DEBUG Mode Turned OFF!" , "");
+  }
+}
+}
+void setup() {
+  pinMode(buzzer, OUTPUT);
+  lcd.begin();
+  lcd.backlight();
+  Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, RXp2, TXp2);
+  #ifdef ESP8266
+  configTime(0, 0, "pool.ntp.org");      // get UTC time via NTP
+  client.setTrustAnchors(&cert); // Add root certificate for api.telegram.org
+  #endif 
+  // Connect to Wi-Fi
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  #ifdef ESP32
+    client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
+  #endif
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi..");
+    lcd.setCursor(0,0);
+    lcd.print("Connecting...");
+  }
+  // Print ESP32 Local IP Address
+  Serial.println(WiFi.localIP());
+  A:
+  lcd.setCursor(0,0);
+  lcd.print("Heating Up...");
+  lcd.print(i);
+  i=i-1;
+  delay(1000);
+  if (i==99)
+  {
+    lcd.clear();
+    goto A;
+    }
+  else if (i==9)
+  {
+    lcd.clear();
+    goto A;
+    }
+  else if (i>0)
+  {
+    goto A;
+    }
+}
+
+void loop() {
+  if (millis() > lastTimeBotRan + botRequestDelay)  {
+    int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+
+    while(numNewMessages) {
+      Serial.println("got response");
+      handleNewMessages(numNewMessages);
+      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    }
+    lastTimeBotRan = millis();
+  }
+  if (debug==0){
+  if(Serial2.available()){
+  String rxString = "";
+  String strArr[4]; //Set the size of the array to equal the number of values you will be receiveing.
+  //Keep looping until there is something in the buffer.
+  while (Serial2.available()) {
+    //Delay to allow byte to arrive in input buffer.
+    delay(2);
+    //Read a single character from the buffer.
+    ch = Serial2.read();
+
+    //Append that single character to a string.
+    rxString+= ch;
+  }
+  int stringStart = 0;
+  int arrayIndex = 0;
+  
+  for (int i=0; i < rxString.length(); i++){
+    //Get character and check if it's our "special" character.
+    if(rxString.charAt(i) == ','){
+      //Clear previous values from array.
+      strArr[arrayIndex] = "";
+      //Save substring into array.
+      strArr[arrayIndex] = rxString.substring(stringStart, i);
+      //Set new string starting point.
+      stringStart = (i+1);
+      arrayIndex++;
+    }
+  }
+  //Put values from the array into the variables.
+  value1 = strArr[0];
+  value2 = strArr[1];
+  value3 = strArr[2];
+  value4 = strArr[3];
+  value5 = strArr[4];
+  //Convert string to int if you need it.
+  aqi = value1.toInt();
+  co = value2.toInt();
+  temp = value3.toFloat();
+  hum = value4.toFloat();
+  }
+  }
+  lcd.clear();
+  lcd.setCursor(0,0); // Sets the cursor to col 0 and row 0
+  lcd.print("AirQuality: "); // Prints Sensor Val: to LCD
+  lcd.setCursor(11,0);
+  lcd.print(aqi); // Prints value on Potpin1 to LCD
+  lcd.setCursor(14,0);
+  lcd.print("Units");
+  lcd.setCursor(0,1); // Sets the cursor to col 1 and row 0
+  lcd.print("        CO: "); // Prints Sensor Val: to LCD
+  lcd.setCursor(11,1);
+  lcd.print(co); // Prints value on Potpin1 to LCD
+  lcd.setCursor(14,1);
+  lcd.print("Units");
+  lcd.setCursor(0,2);
+  lcd.print("T: ");
+  lcd.print(temp);
+  lcd.print("C");
+  lcd.print(" H: ");
+  lcd.print(hum);
+  lcd.print("%");
+  if (temp>=45 && co>=300)
+  {
+    digitalWrite (buzzer,HIGH);
+    lcd.setCursor(0,3);
+    lcd.print("Fire!?");
+    bot.sendMessage(CHAT_ID, "Warning! High Temperature and High concentration of Carbon Monoxide are detected! A Fire maybe detected nearby the device! Please go to the device location to check for any possible fires!", "");
+    }
+  else if (co>=300)
+  {
+    digitalWrite (buzzer,HIGH);
+    lcd.setCursor(0,3);
+    lcd.print("High CO Level!"); 
+    bot.sendMessage(CHAT_ID, "Warning! High concentration of Carbon Monoxide,CO detected nearby the device! Carbon Monoxide poisoning is very dangerous! Please ensure air ventilation is good.", ""); 
+    }
+  else if (aqi>=400)
+  {
+    digitalWrite (buzzer,HIGH);
+    lcd.setCursor(0,3);
+    lcd.print("Gas Leakage!?");
+    bot.sendMessage(CHAT_ID, "Warning! High AQI Value! A Gas Leakage maybe detected nearby the device! Please go to the device location to check for any possible leakages!", "");
+    }
+  else if (aqi>=200)
+  {
+    digitalWrite (buzzer,LOW);
+    lcd.setCursor(0,3);
+    lcd.print("Poor Air Quality!"); 
+    bot.sendMessage(CHAT_ID, "Warning! Poor Air Quality detected nearby the device! Please ensure air ventilation is good for a comfortable environment.", "");
+    }
+  else if (temp>=35)
+   {
+    digitalWrite (buzzer,LOW);
+    lcd.setCursor(0,3);
+    lcd.print("High Temp!");
+    bot.sendMessage(CHAT_ID, "Warning! High Temperature detected nearby the device! Please ensure air ventilation is good for a comfortable environment.", "");
+    delay(1000);
+    }
+    else
+  { 
+    digitalWrite (buzzer,LOW);
+    lcd.setCursor(0,3);
+    lcd.print("Normal.");
+    }
+    delay(300);
+    }
